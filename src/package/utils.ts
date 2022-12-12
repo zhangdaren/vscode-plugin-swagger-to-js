@@ -5,10 +5,7 @@ import { Reference, Schema } from "../types";
  * @param text
  */
 export function comment(text: string): string {
-  return `/**
-  * ${text.trim().replace("\n+$", "").replace(/\n/g, "\n  * ")}
-  */
-`;
+  return `/** ${text.trim().replace("\n+$", "").replace(/\n/g, "\n  * ")} */`;
 }
 
 type SchemaObjectType =
@@ -98,6 +95,7 @@ export const pickObjofKeys = (
 ): { [key: string]: any } => {
   const res = {} as any;
   keys.forEach((item) => {
+    if (!item) return;
     const key = getDefinitionKey(item);
     res[key] = obj[key];
   });

@@ -3,7 +3,7 @@ import decache from "decache";
 import got from "got";
 
 export const fetchSwaggerJson = async () => {
-  const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri?.path;
+  const rootPath = vscode.workspace.workspaceFolders?.[0]?.uri?.fsPath;
   const pkgJsonPath = `${rootPath}/package.json`;
 
   decache(pkgJsonPath);

@@ -14,7 +14,14 @@ export const tsArrayOf = (type: string): string => {
   return `${type}[]`;
 };
 
-export const transform = (node: Schema): string => {
+export const transform = (
+  node: Schema,
+  type = "",
+  hasToApi = false
+): string => {
+  if (type === "response") {
+    console.log("---");
+  }
   switch (getNodeType(node)) {
     case "ref": {
       return formatKey(node.$ref);
@@ -44,8 +51,15 @@ export const transform = (node: Schema): string => {
       }
 
       let properties = "";
+      let valueToApiStr = "";
       if (node.properties && Object.keys(node.properties).length) {
-        properties = createKeys(node.properties || {}, node.required);
+        properties = createKeys(node.properties || {}, node.required, type);
+        if (hasToApi) {
+          valueToApiStr = createValueFromApiKeys(
+            node.properties || {},
+            node.required
+          );
+        }
       }
 
       // if additional properties, add to end of properties
@@ -54,7 +68,8 @@ export const transform = (node: Schema): string => {
           getNodeType(node.additionalProperties) || "any"
         };\n`;
       }
-      return `{ ${properties} }`;
+
+      return `{ ${properties} \n ${valueToApiStr}}`;
       // return tsIntersectionOf([
       //   ...(node.allOf ? (node.allOf as any[]).map(transform) : []), // append allOf first
       //   ...(properties ? [`{ ${properties} }`] : []), // then properties + additionalProperties
@@ -68,9 +83,25 @@ export const transform = (node: Schema): string => {
   return "";
 };
 
-export const createKeys = (
+export const createValueFromApiKeys = (
   obj: { [key: string]: any },
   required: string[] = []
+): string => {
+  let output = "valueFromApi(apiData: any): void {";
+
+  Object.entries(obj).forEach(([key, value]) => {
+    // 1. name (with “?” if optional property)
+    output += `this.${key} = apiData.${key};`;
+  });
+  output += "}\n";
+
+  return output;
+};
+
+export const createKeys = (
+  obj: { [key: string]: any },
+  required: string[] = [],
+  type = ""
 ): string => {
   let output = "";
 
@@ -86,6 +117,15 @@ export const createKeys = (
     // 3. get value
     output += transform(value);
 
+    if (type === "params") {
+      // const valType = getNodeType(value) || 'any'
+      // const defaultValue = getValueTypeDefult(valType)
+      const defaultValue = getValueTypeDefultByKey(key, value.type);
+      console.log(key, value.type, defaultValue);
+      if (defaultValue) {
+        output += ` = ${defaultValue}`;
+      }
+    }
     // 4. close type
     output += ";\n";
   });
@@ -93,7 +133,58 @@ export const createKeys = (
   return output;
 };
 
-export const createInterface = (obj: { [key: string]: any }) => {
+/**
+ * 根据字段名或类型获取默认值
+ * @param key    字段名
+ * @param valueType   字段类型
+ * @returns
+ */
+function getValueTypeDefultByKey(key: string, valueType: string) {
+  let value: any = `""`;
+  switch (key) {
+    case "pageNum":
+      value = `1`;
+      break;
+    case "pageSize":
+      value = "10";
+      break;
+    default:
+      value = getValueTypeDefult(valueType);
+      break;
+  }
+  return value;
+}
+
+/**
+ * 根据类型获取默认值
+ * @param type  字段类型
+ * @returns
+ */
+function getValueTypeDefult(type: any) {
+  let value: any = `""`;
+  switch (type) {
+    case "string":
+      value = `""`;
+      break;
+    case "number":
+      value = "0";
+      break;
+    case "boolean":
+      value = "false";
+      break;
+    case "array":
+      value = "[]";
+      break;
+    case "object":
+      value = "{}";
+      break;
+    default:
+      break;
+  }
+  return value;
+}
+
+export const createInterface = (obj: { [key: string]: any }, type = "") => {
   let output = "";
   Object.entries(obj).forEach(([key, value]) => {
     if (value.description) {
@@ -102,7 +193,13 @@ export const createInterface = (obj: { [key: string]: any }) => {
 
     // const name = getDefinitionKey(key);
 
-    output += `interface ${formatKey(key)}  ${transform(value)};\n`;
+    if (type === "response" && key.includes("«")) {
+      output += `export class ${formatKey(
+        key
+      )} implements HttpResponseData  ${transform(value, type, true)};\n`;
+    } else {
+      output += `export class ${formatKey(key)}  ${transform(value, type)};\n`;
+    }
   });
 
   return output;

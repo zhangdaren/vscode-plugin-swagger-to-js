@@ -111,8 +111,8 @@ export const generateTypes = (
   const resDefinitions = pickObjofKeys(jsonSchema.definitions, resKeys);
   const paramsDefinitions = pickObjofKeys(jsonSchema.definitions, paramsKeys);
 
-  const result = `${createInterface(paramsDefinitions)}\n${createInterface(
-    resDefinitions
+  const result = `${createInterface(paramsDefinitions, "params")}\n${createInterface(
+    resDefinitions, "response"
   )} `;
 
   // return result;

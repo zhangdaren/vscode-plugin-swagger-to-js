@@ -1,10 +1,10 @@
-{
-  "name": "swagger-to-ts",
-  "displayName": "swagger-to-ts",
-  "publisher": "farewing",
+ {
+  "name": "swagger-to-ts-fix",
+  "displayName": "swagger-to-ts-fix",
+  "publisher": "zhangdaren",
   "description": "",
-  "version": "0.1.4",
-  "repository": "https://github.com/Farewing/vscode-plugin-swagger-to-js.git",
+  "version": "0.1.5",
+  "repository": "https://github.com/zhangdaren/vscode-plugin-swagger-to-js",
   "engines": {
     "vscode": "^1.49.0"
   },
